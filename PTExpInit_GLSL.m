@@ -79,8 +79,9 @@ end
 [xCenter, yCenter] = RectCenter(screensize);
 
 % psychtoolbox start screen in black (instead of white)
-% Screen('Preference', 'VisualDebugLevel', 1);
 Screen('Preference', 'VisualDebugLevel', 1);
+% Screen('Preference', 'VisualDebugLevel', 3);
+Screen('Preference', 'SkipSyncTests', 1);
 % Screen('Preference', 'SkipSyncTests', 1); disp('warning: SkipSyncTests enabled...')
 % open a psychtoolbox window in background color
 window = Screen('OpenWindow', Scr.ScrNum, Scr.BckGrCol.*255);%, [0,0,800,600]); % 1 = main screen (0|2 -> main screen with menu bar|second monitor), color = 0 (white|[1 1 1 a]), rect = default (fullscreen|[0,0,width,height])

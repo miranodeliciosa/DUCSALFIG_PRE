@@ -35,11 +35,6 @@ KbWait(ps.RespDev,1); % wait for releasing keys on indicated response device
 % create keayboard queue
 KbQueueCreate(ps.RespDev)
 
-if flag_training~=1
-    fprintf(1,'\nexperiment - Praesentation - Trial %1.0f', i_tr)
-else
-    fprintf(1,'\ntraining - Praesentation - Trial %1.0f', i_tr)
-end
 
 % Build the German feedback text
 text2present = [ ...
@@ -61,6 +56,14 @@ while ~(key.keycode(key.rkey)==1)                       % continuously present f
     [key.keyisdown,key.secs,key.keycode] = KbCheck;
     DrawFormattedText(ps.window, text2present, 'center', 'center', p.crs.color);
     Screen('Flip', ps.window, 0);                   % flip screen
+end
+
+Screen('Flip', ps.window, 0); 
+%experimenter output
+if flag_training~=1
+    fprintf(1,'\nexperiment - Praesentation - Trial %1.0f', i_tr)
+else
+    fprintf(1,'\ntraining - Praesentation - Trial %1.0f', i_tr)
 end
 
 ttt=WaitSecs(1);

@@ -14,67 +14,134 @@ else
     % addpath(genpath('/path/to/Palamedes'));  % <- adjust if needed
 end
 
-dataFile = '/Users/sebastianwehle/Documents/MATLAB/Data_DuCSalFigPRE/logfiles/VP99_timing.mat';
+%dataFile = '/Users/sebastianwehle/Documents/MATLAB/Data_DuCSalFigPRE/logfiles/VP99_timing.mat';
+dataFile = '/home/pc/matlab/user/sebastian/DuC_salientfigure/PreExp/logfiles/VP99_timing.mat';
 load(dataFile);   % loads variable(s) incl. "resp"
 
-E = resp.experiment{1};   % trial = 1 (as you indicated)
+%% -------- Aggregate behavioral data from ALL trials --------
+allAnglesVals = [];          % physical angles per event (across all trials)
+allIsCorrect  = [];          % correctness per event (1=correct, 0=incorrect)
 
-%!%!%!
-SBA.event.anglesToRotate       = [10:5:45]; % FOR CODING 
-E.SBA.event.anglesToRotate = SBA.event.anglesToRotate;
-%% -------- Extract per-event data --------
-% Required fields:
-%   - E.SBA_contrast: vector of contrast indices (1..8)
-%   - E.event_response_class: cell array of 'correct'/'incorrect'
-%   - E.SBA.event.anglesToRotate: [5 8 10 12 14 16 20 35] (mapping from index->angle)
+for t = 1:numel(resp.experiment)
+    E = resp.experiment{t};
+    if isempty(E), continue; end
 
-% Ensure column vectors
-contrastIdx = E.SBA_contrast(:);                           % 1..8
-respClass   = string(E.event_response_class(:));           % "correct"/"incorrect"
+    % Optional override (if needed): inject mapping
+    SBA.event.anglesToRotate = 10:5:45;   % your FOR CODING values
+    E.SBA.event.anglesToRotate = SBA.event.anglesToRotate;
 
-% Map indices to physical contrast values (angles)
-if isfield(E, 'SBA') && isfield(E.SBA, 'event') && isfield(E.SBA.event, 'anglesToRotate')
-    angles = E.SBA.event.anglesToRotate(:)';               % 1x8
-else
-    % Fallback to the values you provided in the message:
-    angles = [5 8 10 12 14 16 20 35];                      % degrees
-    warning('Using fallback anglesToRotate = [5 8 10 12 14 16 20 35].');
+    % Map contrast index to physical angle
+    if isfield(E, 'SBA') && isfield(E.SBA, 'event') && isfield(E.SBA.event, 'anglesToRotate')
+        angles = E.SBA.event.anglesToRotate(:)';               % 1xN
+    else
+        angles = [5 8 10 12 14 16 20 35];                      % fallback
+        warning('Trial %d: missing anglesToRotate, using fallback.', t);
+    end
+
+    % Get contrast indices and response class for this trial
+    if ~isfield(E, 'SBA_contrast') || ~isfield(E, 'event_response_class')
+        warning('Trial %d missing SBA_contrast or response data. Skipping.', t);
+        continue;
+    end
+
+    contrastIdx = E.SBA_contrast(:);
+    respClass   = string(E.event_response_class(:));
+
+    % Basic alignment
+    nEv = min(numel(contrastIdx), numel(respClass));
+    contrastIdx = contrastIdx(1:nEv);
+    respClass   = respClass(1:nEv);
+
+    % Valid contrast indices
+    validIdx = contrastIdx >= 1 & contrastIdx <= numel(angles);
+    contrastIdx = contrastIdx(validIdx);
+    respClass   = respClass(validIdx);
+
+    % Map to angles
+    anglesPerEvent = angles(contrastIdx);
+
+    % Convert responses to binary
+    isCorrect = NaN(numel(respClass), 1);
+    isCorrect(contains(lower(respClass), 'correct'))   = 1;
+    isCorrect(contains(lower(respClass), 'incorrect')) = 0;
+
+    % Keep only valid responses
+    valid = ~isnan(isCorrect);
+    allAnglesVals = [allAnglesVals; anglesPerEvent(valid)'];
+    allIsCorrect  = [allIsCorrect;  isCorrect(valid)];
 end
-
-% Basic sanity checks
-assert(all(contrastIdx >= 1 & contrastIdx <= numel(angles)), 'Contrast indices out of range.');
-assert(numel(respClass) == numel(contrastIdx), 'Length mismatch: responses vs contrasts.');
-
-% Convert responses to 1=correct, 0=incorrect; ignore anything else
-isCorrect = NaN(numel(respClass), 1);
-isCorrect(contains(lower(respClass), 'correct'))   = 1;
-isCorrect(contains(lower(respClass), 'incorrect')) = 0;
-
-valid = ~isnan(isCorrect);
-contrastIdx = contrastIdx(valid);
-isCorrect   = isCorrect(valid);
 
 %% -------- Aggregate per contrast level --------
-levels = 1:numel(angles);
-stimLevels = angles(levels);       % x-axis (physical units: degrees)
+[stimLevels, ~, grp] = unique(allAnglesVals);   % sorted unique angles
+numLevels = numel(stimLevels);
 
-outOfNum  = zeros(size(levels));
-numCorrect = zeros(size(levels));
+outOfNum   = accumarray(grp, 1, [numLevels 1], @sum, 0);
+numCorrect = accumarray(grp, allIsCorrect, [numLevels 1], @sum, 0);
 
-for k = levels
-    idx = contrastIdx == k;
-    outOfNum(k)  = sum(idx);
-    numCorrect(k) = sum(isCorrect(idx));
-end
-
-% Remove empty levels (no trials), if any
-haveData = outOfNum > 0;
+% Remove empty levels (safety check)
+haveData   = outOfNum > 0;
 stimLevels = stimLevels(haveData);
 outOfNum   = outOfNum(haveData);
 numCorrect = numCorrect(haveData);
 
-% Proportion correct (for plotting)
+% Proportion correct
 propCorrect = numCorrect ./ outOfNum;
+% % % % % 
+% % % % % E = resp.experiment{1};   % trial = 1 (as you indicated)
+% % % % % %% -------- Extract per-event data --------
+% % % % % % Required fields:
+% % % % % %   - E.SBA_contrast: vector of contrast indices (1..8)
+% % % % % %   - E.event_response_class: cell array of 'correct'/'incorrect'
+% % % % % %   - E.SBA.event.anglesToRotate: [5 8 10 12 14 16 20 35] (mapping from index->angle)
+% % % % % 
+% % % % % % Ensure column vectors
+% % % % % contrastIdx = E.SBA_contrast(:);                           % 1..8
+% % % % % respClass   = string(E.event_response_class(:));           % "correct"/"incorrect"
+% % % % % 
+% % % % % % Map indices to physical contrast values (angles)
+% % % % % if isfield(E, 'SBA') && isfield(E.SBA, 'event') && isfield(E.SBA.event, 'anglesToRotate')
+% % % % %     angles = E.SBA.event.anglesToRotate(:)';               % 1x8
+% % % % % else
+% % % % %     % Fallback to the values you provided in the message:
+% % % % %     angles = SBA.event.anglesToRotate(:);                      % degrees
+% % % % %     warning('Using fallback anglesToRotate from SBA.event.anglesToRotate(:).');
+% % % % % end
+% % % % % 
+% % % % % % Basic sanity checks
+% % % % % assert(all(contrastIdx >= 1 & contrastIdx <= numel(angles)), 'Contrast indices out of range.');
+% % % % % assert(numel(respClass) == numel(contrastIdx), 'Length mismatch: responses vs contrasts.');
+% % % % % 
+% % % % % % Convert responses to 1=correct, 0=incorrect; ignore anything else
+% % % % % isCorrect = NaN(numel(respClass), 1);
+% % % % % isCorrect(contains(lower(respClass), 'correct'))   = 1;
+% % % % % isCorrect(contains(lower(respClass), 'incorrect')) = 0;
+% % % % % 
+% % % % % valid = ~isnan(isCorrect);
+% % % % % contrastIdx = contrastIdx(valid);
+% % % % % isCorrect   = isCorrect(valid);
+% % % % % 
+% % % % % %% -------- Aggregate per contrast level --------
+% % % % % levels = 1:numel(angles);
+% % % % % stimLevels = angles(levels);       % x-axis (physical units: degrees)
+% % % % % 
+% % % % % outOfNum  = zeros(size(levels));
+% % % % % numCorrect = zeros(size(levels));
+% % % % % 
+% % % % % for k = levels
+% % % % %     idx = contrastIdx == k;
+% % % % %     outOfNum(k)  = sum(idx);
+% % % % %     numCorrect(k) = sum(isCorrect(idx));
+% % % % % end
+% % % % % 
+% % % % % % Remove empty levels (no trials), if any
+% % % % % haveData = outOfNum > 0;
+% % % % % stimLevels = stimLevels(haveData);
+% % % % % outOfNum   = outOfNum(haveData);
+% % % % % numCorrect = numCorrect(haveData);
+% % % % % 
+% % % % % % Proportion correct (for plotting)
+% % % % % propCorrect = numCorrect ./ outOfNum;
+
 
 %% -------- Palamedes setup: Weibull PF + MLE --------
 PF = @PAL_Weibull;                % choices: PAL_Weibull, PAL_Logistic, PAL_CumulativeNormal, ...
@@ -130,7 +197,12 @@ numMC = 1000;
 
 [Dev, pDev] = PAL_PFML_GoodnessOfFit( ...
     stimLevels, numCorrect, outOfNum, ...
-    paramsValues, paramsFree, numMC, PF);   % strictly positional
+    paramsValues, paramsFree, numMC, PF, ...
+    'searchGrid', searchGrid, ...
+    'lapseLimits', lapseLimits, ...
+    'gammaEQlambda', false, ...
+    'noGrouping', true);  % <-- prevents GroupTrialsbyX from being called
+
 
 
 fprintf('--- Goodness-of-Fit (Deviance) ---\n');
@@ -150,41 +222,51 @@ fprintf('beta :  [%.4f, %.4f]\n', CI(1,2), CI(2,2));
 fprintf('gamma:  fixed at 0.5\n');
 fprintf('lambda: [%.4f, %.4f]\n\n', CI(1,4), CI(2,4));
 
-%% -------- Plot data + fit --------
+%% -------- Plot: PF fit + empirical data --------
 PFhat = @(x,a,b,g,l) PF([a b g l], x);
-gammaFixed = searchGrid.gamma;   % 0.5
+gammaFixed = searchGrid.gamma;  % 0.5 for 2AFC
 
-
+% Generate smooth fit curve
 xPlot = linspace(min(stimLevels), max(stimLevels), 400);
-yFit = PFhat(xPlot, alpha, beta, gammaFixed, lambda);
+yFit  = PFhat(xPlot, alpha, beta, gammaFixed, lambda);
 
+% Plot
 figure('Color','w'); hold on;
-% Data with binomial SE bars
+
+% Empirical data: proportion correct with binomial SE
 pc = propCorrect;
 se = sqrt(pc .* (1 - pc) ./ outOfNum);
-errorbar(stimLevels, pc, se, 'o', 'MarkerFaceColor',[.2 .2 .2], 'LineStyle','none');
-plot(xPlot, yFit, 'LineWidth', 2);
+errorbar(stimLevels, pc, se, 'o', ...
+    'MarkerFaceColor', [0.2 0.2 0.2], ...
+    'LineStyle', 'none', ...
+    'DisplayName', 'Data (\pm1 SE)');
 
-ylim([0.45 1]);
+% Fitted psychometric function
+plot(xPlot, yFit, 'LineWidth', 2, 'DisplayName', 'Weibull fit');
+
+% Aesthetics
+ylim([0.45 1.01]);
 xlim([min(stimLevels) max(stimLevels)]);
-xlabel('Contrast (degrees; anglesToRotate)');
+xlabel('Contrast (degrees)');
 ylabel('Proportion correct');
-title(sprintf('2AFC PF fit (Weibull, MLE): \\alpha=%.3f, \\beta=%.3f, \\lambda=%.3f', alpha, beta, lambda));
-yline(0.5,':'); % chance level
+title(sprintf('2AFC PF fit (Weibull, MLE)\n\\alpha = %.3f, \\beta = %.3f, \\lambda = %.3f', ...
+    alpha, beta, lambda));
+yline(0.5, ':', 'Chance', 'LabelHorizontalAlignment', 'left');
+legend('Location', 'southeast');
 grid on;
-legend({'Data (\pm1 SE)','Weibull fit'}, 'Location','southeast');
 
-%% -------- Optional: numeric threshold at 75%% correct --------
-% Solve numerically for x where PF(x) = 0.75
+%% -------- Optional: threshold at 75% correct --------
 crit = 0.75;
 f = @(x) PFhat(x, alpha, beta, gammaFixed, lambda) - crit;
 
 try
-    x0 = alpha;  % good starting point
+    x0 = alpha;  % starting point for fzero
     thr75 = fzero(f, x0);
-    xline(thr75, '--');
-    text(thr75, 0.52, sprintf('  %.2f at 75%%', thr75), 'VerticalAlignment','bottom');
-    fprintf('Threshold at %.0f%% correct: %.4f\n', 100*crit, thr75);
+    xline(thr75, '--', 'DisplayName', '75% threshold');
+    text(thr75, 0.52, sprintf('%.2f° at 75%%', thr75), ...
+        'VerticalAlignment', 'bottom', ...
+        'HorizontalAlignment', 'center');
+    fprintf('Threshold at %.0f%% correct: %.4f\n', 100 * crit, thr75);
 catch
-    warning('Threshold solver failed; consider broadening search or checking fit.');
+    warning('Threshold solver failed. Try checking the PF or expanding x-range.');
 end
