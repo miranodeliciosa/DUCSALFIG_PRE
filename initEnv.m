@@ -1,0 +1,135 @@
+% Initialize Psychtoolbox environment and test generateBarTextures
+
+try
+    % Setup Psychtoolbox
+    Screen('Preference', 'SkipSyncTests', 1); % Disable sync tests for development
+    AssertOpenGL;
+    % Open a window
+    screenNumber = min(Screen('Screens'));
+    screensize=Screen('Rect', screenNumber);
+    ps.framerate = Screen('FrameRate', screenNumber);
+    [ps.window, ps.windowRect] = Screen('OpenWindow', screenNumber, [0 0 0], screensize);
+
+
+%%    % Define test parameters 
+% call run script 
+%    SBA.numBars = [12, 12];                    % num columns x num rows of bar array 
+%     
+%     SBA.sizeBars = [40, 15];                % [length, width] in pixels
+%     SBA.defaultAngle = 90;                   % Horizontal bars
+%     %anglesToRotate = [sort(-exp(1.7:0.25:4)) 0 exp(1.7:0.25:4)];      % Test 3 rotation conditions
+%    % SBA.anglesToRotate = [-45 -20 -15 -10 -5 0 5 10 15 20 45];      % Test 3 rotation conditions
+%     SBA.event.anglesToRotate = [21:];      % Test 3 rotation conditions
+%     SBA.anglesToRotate = [10:20/4:25];
+% 
+%     SBA.colors = [
+%         [0    0.8000    0.6980];
+%         [1.0000    0.3137         0];
+%         [0.2745    0.4118    1.0000 ];
+%         [0.7843    0.3137    1.0000 ];
+%         [0.6980    0.9020         0]
+%     ];
+% 
+%     SBA.freq = 7.5;
+%     SBA.event_duration = 1/SBA.freq;
+
+    % define shape of to-be-rotated bars
+%     [iCols, iRows] = extractColorIndices('images', [0, 0, 0], SBA.numBars);
+%     j = 7; 
+%    SBA.barsToRotate = {iRows{j}; iCols{j}}; % Leave empty for random selection
+
+  
+
+ SBAin.trial = struct( ...
+        'frames',RDKin.trial.frames,...
+        'cue',1);
+
+    SBAin.trial.event = struct( ...
+        'duration', .125, ...
+        'onset',1,...%!!!
+        'contrast',[8], ...
+        'shape',5); % EXCLUDE NANs
+
+% 
+%     SBAin.trial = struct('duration',6,...
+%         'frames',6*120);
+%     SBAin.trial.event = struct('duration', SBA.event_duration, ...
+%         'onset',361,...
+%         'contrast',4,...
+%         'shape',1);
+                % Shape index definitions:
+            %  1  = triangle
+            %  2  = mask
+            %  3  = cross
+            %  4  = L-shape
+            %  5  = rotated L-shape
+            %  6  = honeycomb
+            %  7  = pacman
+            %  8  = boat
+            %  9  = lying C-shape
+            % 10  = C-shape
+            % 11  = left-facing staple
+            % 12  = ball
+            % 13  = upward-facing staple
+            % 14  = arrow up
+            % 15  = arrow down
+            % 16  = zigzag
+            % 17  = upright zigzag
+            % 18  = zigzag (duplicate of 16)
+            % 19  = upright zigzag (duplicate of 17)
+            % 20  = square
+            % 21  = diamond
+            % 22  = horizontal bar
+            % 23  = vertical bar
+            % 24  = upright dumbbell
+            % 25  = horizontal dumbbell
+            % 26  = bowl
+
+
+
+    % Call the texture generation function
+    [barTex, dstRects, angles] = generateBarTextures(ps, SBA, SBAin);
+
+    % Display all rotation conditions
+   % for i = 1:size(angles, 1)
+    %    for c = 1:length(barTextures)
+    i=1; c=1; 
+    for i_fl = 1
+            %Screen('FillRect', window, 0); % Clear screen
+            Screen('DrawTextures', ps.window, barTex{i_fl}, [], dstRects, angles(:, i_fl));
+            Screen('DrawTextures', ps.window, p.FixTex, [], p.crs.rects);
+
+            Screen('Flip', ps.window);
+    end 
+            %DrawFormattedText(window, sprintf('Color %d, Rotation condition %d', c, i), 'center', windowRect(4)-40, [255 255 255]);
+            %Screen('Flip', window);
+            %KbWait([], 2); % Wait for keypress
+     %   end
+    %end 
+%%
+    % Cleanup
+    Screen('CloseAll');
+
+catch ME
+    Screen('CloseAll');
+    rethrow(ME);
+end
+
+
+%% create fix tex
+% Beispiel: Erstellen eines roten Fixationskreuzes mit einer Größe von 100 und einer Breite von 5
+color = [.5, .5, .5]*255;  % Rot
+size = 100;  % Größe des Fixationskreuzes
+width = 5;  % Dicke der Linien
+
+% Erstelle das Fixationskreuz
+FixTex = MakeFixationTextures(window, color, size, width);
+
+p.crs.rects = CenterRectOnPoint([0 0 50 50], 250, 500);
+% Zeichne die Textur auf den Bildschirm
+Screen('DrawTextures', ps.window, FixTex, [], p.crs.rects);
+
+% Aktualisiere den Bildschirm
+Screen('Flip', ps.window);
+
+
