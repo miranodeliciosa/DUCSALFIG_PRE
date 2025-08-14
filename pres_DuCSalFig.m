@@ -35,10 +35,10 @@ KbWait(ps.RespDev,1); % wait for releasing keys on indicated response device
 % create keayboard queue
 KbQueueCreate(ps.RespDev)
 
-
 % Build the German feedback text
 text2present = [ ...
-    '\nR E A D Y ?' ...
+    sprintf('Trial %1.0f von %d', i_tr, conmat.totaltrials ) ...
+    '\n\nR E A D Y ?' ...
     '\n\nDrücken Sie die Leertaste, um fortzufahren.'
 ];
 
@@ -58,6 +58,7 @@ while ~(key.keycode(key.rkey)==1)                       % continuously present f
     Screen('Flip', ps.window, 0);                   % flip screen
 end
 
+Screen('DrawTexture', ps.window, p.FixTex, [], p.crs.rects);
 Screen('Flip', ps.window, 0); 
 %experimenter output
 if flag_training~=1
@@ -100,7 +101,7 @@ ttt=WaitSecs(1);
     % crossmat omitted 
     % preallocate timing
     timing(i_tr) = struct('VBLTimestamp',NaN(1,frames.flips),'StimulusOnsetTime',NaN(1,frames.flips),...
-        'FlipTimestamp',NaN(1,frames.flips),'Missed',NaN(1,frames.flips));
+        'FlipTimestamp',NaN(1,frames.flips),'Missed',NaN(1,frames.flips), 'FlipLog',NaN(1,frames.flips));
 
 %% set up responses
     %setup key presses
@@ -123,8 +124,9 @@ ttt=WaitSecs(1);
     resp(1).SBA_eventshapes              = conmat.trials(i_tr).SBA_eventshapes;
     resp(1).SBA_eventshapenames          = {conmat.trials(i_tr).SBA_eventshapeNames};
 
-    %% set up trigger vector
-    % TODO...
+    %% set up trigger vector and command info
+    event_indicator = false(1, frames.flips);
+    event_indicator(resp(1).SBA_event_frames) = true; 
 
      % draw fixation cross
      Screen('DrawTexture', ps.window, p.FixTex, [], p.crs.rects);
@@ -136,6 +138,7 @@ ttt=WaitSecs(1);
     % flip to get everything synced
     Screen('Flip', ps.window, 0);
 
+    fprintf('\nTrial %1.0f', i_tr);  % print the trial number
        %% loop across flips   
     for i_fl = 1:frames.flips
         %% Drawing
@@ -159,6 +162,7 @@ ttt=WaitSecs(1);
         % Flip
         [timing(i_tr).VBLTimestamp(i_fl), timing(i_tr).StimulusOnsetTime(i_fl), timing(i_tr).FlipTimestamp(i_fl), timing(i_tr).Missed(i_fl)] = Screen('Flip', ps.window, 0);
         
+ 
         % save image
         %imageArray=Screen('GetImage', ps.window);
         %imwrite(imageArray,'ScreenTest_cue_FShiftGlob.png')
@@ -169,6 +173,7 @@ ttt=WaitSecs(1);
             starttime=GetSecs;
             KbEventFlush(ps.RespDev); % flush keyboard
         end
+
         
         %% check for button presses
         [key.pressed, key.firstPress]=KbQueueCheck(ps.RespDev);
@@ -177,7 +182,9 @@ ttt=WaitSecs(1);
 %         if any(key.firstPress(key.keymap)>1)
 %             lptwrite(1,find(key.firstPress(key.keymap),1,'first'),500);
 %         end
-    % log flips
+        % log flips
+        fprintf(repmat('.', 1, event_indicator(i_fl)))
+        timing(i_tr).FlipLog = i_fl;
     end 
      %% ITI
     % draw fixation cross again
