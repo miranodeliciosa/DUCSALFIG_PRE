@@ -222,7 +222,7 @@ if flag_training
                     'direction',randsample([-1 1],1,1),...
                     'shape',iShape); 
             
-            ShapePres.Text.Target = '\nDies ist die gesuchte Zielform.\nWeiter mit Leertaste.';
+            ShapePres.Text.Target = '\nDies ist die gesuchte Zielform.';
             ShapePres.Text.Distractor = '\nDies ist eine der anderen Formen, die vorkommen können.';
             ShapePres.Text.Rep =  'Wollen Sie die Formen ein weiteres Mal sehen (j/n)?';
         

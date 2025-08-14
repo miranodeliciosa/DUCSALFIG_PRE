@@ -38,7 +38,7 @@ SBA.event.anglesToRotate = [32:2:46];
 %     j = 7; 
 %    SBA.barsToRotate = {iRows{j}; iCols{j}}; % Leave empty for random selection
 
-  RDKin.trial.frames = 1;
+  RDKin.trial.frames = 10000;
 
  %SBA
     SBAin.trial = struct( ...
@@ -50,7 +50,9 @@ SBA.event.anglesToRotate = [32:2:46];
         'onset',1,...
         'contrast',5, ...
         'direction',1,...
-        'shape',5); % EXCLUDE NANs
+        'shape',1); % EXCLUDE NANs
+
+    [barTex, dstRects, angles] = generateBarTextures(ps, SBA, SBAin);
 
 % 
 %     SBAin.trial = struct('duration',6,...

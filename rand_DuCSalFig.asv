@@ -3,20 +3,29 @@ function [ conmat, SBA] = rand_DuCSalFig(p, RDK, SBA, flag_training)
 % set trial number and check whether disribution works
 if flag_training~=0
     SBA.event.anglesToRotate       = SBA.event.anglesToRotate_t;
-    conmat.totalSBAevents = numel(p.stim.contrast)*numel(p.stim.condition)*p.stim.con_repeats_t;
+    conmat.totalSBAevents = numel(p.stim.contrast)*numel(p.stim.condition)*p.stim.con_repeats_e;
     conmat.totalRDKevents = p.stim.event.ratio*conmat.totalSBAevents;
-    conmat.totaltrials = conmat.totalSBAevents/p.stim.eventsPerTrial_t;
+    conmat.totaltrials = conmat.totalSBAevents/p.stim.eventsPerTrial;
+    conmat.nEventsPerCondition=p.stim.con_repeats_e;
+%     if mod(sum(p.stim.eventnum)*p.stim.con_repeats_t,numel([1 p.stim.RDKdistr]))~=0
+%         error('rando:targdistrdistribute', ['Can not distribute target and distractor types equally across events. The event number per condition is %1.0f with %1.0f repetition(s).\n',...
+%         '%1.0f types need to be distributed. Recommended to increase con_repeats to e.g. %1.0f.'],... 
+%         sum(p.stim.eventnum), p.stim.con_repeats_t, numel([1 p.stim.RDKdistr]), lcm(sum(p.stim.eventnum),numel([1 p.stim.RDKdistr]))/sum(p.stim.eventnum));
+%     end
     conmat.nEventsPerCondition=p.stim.con_repeats_t;
-    p.stim.trialTime = p.stim.trialTime_t;
 else
     SBA.event.anglesToRotate       = SBA.event.anglesToRotate_e;
     conmat.totalSBAevents = numel(p.stim.contrast)*numel(p.stim.condition)*p.stim.con_repeats_e;
     conmat.totalRDKevents = p.stim.event.ratio*conmat.totalSBAevents;
-    conmat.totaltrials = conmat.totalSBAevents/p.stim.eventsPerTrial_e;
+    conmat.totaltrials = conmat.totalSBAevents/p.stim.eventsPerTrial;
     conmat.nEventsPerCondition=p.stim.con_repeats_e;
-    p.stim.trialTime = p.stim.trialTime_e;
-end 
+%     if mod(sum(p.stim.eventnum)*p.stim.con_repeats_e,numel([1 p.stim.RDKdistr]))~=0
+%         error('rando:targdistrdistribute', ['Can not distribute target and distractor types equally across events. The event number per condition is %1.0f with %1.0f repetition(s).\n',...
+%         '%1.0f types need to be distributed. Recommended to increase con_repeats to e.g. %1.0f.'],... 
+%         sum(p.stim.eventnum), p.stim.con_repeats_e, numel([1 p.stim.RDKdistr]), lcm(sum(p.stim.eventnum),numel([1 p.stim.RDKdistr]))/sum(p.stim.eventnum));
+%     end   
 
+end 
 
 % matrix with onset times of on frames for RDKs
 t.onframesonset = nan(numel(RDK.RDK),p.scr_refrate*p.stim.trialTime);

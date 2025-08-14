@@ -9,13 +9,17 @@ clear; clc;
 % Palamedes in working directory (adjust if needed)
 if exist('./Palamedes', 'dir') == 7
     addpath(genpath('./Palamedes'));
-else
+elseif IsOSX
+    addpath('/Users/sebastianwehle/Documents/MATLAB/Data_Tiltanic_OLDBACKUP/Palamedes');
+elseif IsLinux
     warning('Palamedes folder not found in working directory. Adjust addpath below.');
     % addpath(genpath('/path/to/Palamedes'));  % <- adjust if needed
 end
 
-%dataFile = '/Users/sebastianwehle/Documents/MATLAB/Data_DuCSalFigPRE/logfiles/VP99_timing.mat';
-dataFile = '/home/pc/matlab/user/sebastian/DuC_salientfigure/PreExp/logfiles/VP99_timing.mat';
+if IsOSX
+    dataFile = '/Users/sebastianwehle/Documents/MATLAB/Data_Tiltanic/logfiles/VP99_timing.mat'; 
+end 
+%if IsLinux; dataFile = '/home/pc/matlab/user/sebastian/DUC_TILTANIC/PreExp/logfiles/VP99_timing.mat'; end 
 load(dataFile);   % loads variable(s) incl. "resp"
 
 %% -------- Aggregate behavioral data from ALL trials --------

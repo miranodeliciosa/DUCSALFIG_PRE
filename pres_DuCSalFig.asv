@@ -9,8 +9,7 @@ function [timing,key,resp] = pres_DuCSalFig(p, ps, key, RDK, SBA, conmat, i_tr, 
 
 %% adaptations for training
 if flag_training == 1
-    blocknum_present = blocknum;
-    blocknum = 1;
+
 end
 
 %% initialize some RDK settings
@@ -19,16 +18,9 @@ RDKin.scr = ps;
 RDKin.scr.refrate = p.scr_refrate;
 RDKin.Propixx = p.scr_imgmultipl;
 RDKin.RDK = RDK;
-RDKin.crs = p.crs;
+RDKin.crs = p.crs; % cutout
 
 %% loop for each trial
-% send start trigger
-if flag_training~=1
-%     PRPX_sendRecTrigger('start') % TODO: how can i send trigger in 119?
-elseif flag_training == 1 && p.stim.train_trials ~= 0
-    trialindex = [1:p.stim.train_trials]'; %quick fix to make training shorter; 
-end
-
 % Wait for release of all keys on keyboard, then sync us to retrace:
 KbWait(ps.RespDev,1); % wait for releasing keys on indicated response device
 
@@ -36,11 +28,19 @@ KbWait(ps.RespDev,1); % wait for releasing keys on indicated response device
 KbQueueCreate(ps.RespDev)
 
 % Build the German feedback text
-text2present = [ ...
-    sprintf('Trial %1.0f von %d', i_tr, conmat.totaltrials ) ...
-    '\n\nR E A D Y ?' ...
-    '\n\nDrücken Sie die Leertaste, um fortzufahren.'
-];
+if flag_training == 0
+    text2present = [ ...
+        sprintf('Trial %1.0f von %d', i_tr, conmat.totaltrials ) ...
+        '\n\nR E A D Y ?' ...
+        '\n\nDrücken Sie die Leertaste, um fortzufahren.'
+    ];
+elseif flag_training == 1
+    text2present = [ ...
+        sprintf('Training Trial %1.0f', i_tr) ...
+        '\n\nR E A D Y ?' ...
+        '\n\nDrücken Sie die Leertaste, um fortzufahren.'
+    ];
+end 
 
 % Draw
 Screen('TextSize', ps.window, 24);
@@ -91,10 +91,10 @@ ttt=WaitSecs(1);
 
     SBAin.trial.event = struct( ...
         'duration', SBA.event.duration, ...
-        'onset',conmat.trials(i_tr).SBA_event_frames,...%!!!
+        'onset',conmat.trials(i_tr).SBA_event_frames,...
         'contrast',conmat.trials(i_tr).SBA_contrast, ...
         'direction', conmat.trials(i_tr).SBA_contrast_direction,...
-        'shape',conmat.trials(i_tr).SBA_eventshapes); % EXCLUDE NANs
+        'shape',conmat.trials(i_tr).SBA_eventshapes); 
 
     [barTex, dstRects, angles] = generateBarTextures(ps, SBA, SBAin);
 
@@ -126,8 +126,8 @@ ttt=WaitSecs(1);
 
     %% set up trigger vector and command info
     event_indicator = false(1, frames.flips);
-    event_indicator(event_indicator) = true; 
-    
+    event_indicator(resp(1).SBA_event_frames) = true; 
+
      % draw fixation cross
      Screen('DrawTexture', ps.window, p.FixTex, [], p.crs.rects);
      %% keyboard
@@ -182,9 +182,9 @@ ttt=WaitSecs(1);
 %         if any(key.firstPress(key.keymap)>1)
 %             lptwrite(1,find(key.firstPress(key.keymap),1,'first'),500);
 %         end
-    % log flips
-    fprintf(repmat('.', 1, event_indicator(i_fl)));
-    timing(i_tr).FlipLog = i_fl;
+        % log flips
+        fprintf(repmat('.', 1, event_indicator(i_fl)))
+        timing(i_tr).FlipLog = i_fl;
     end 
      %% ITI
     % draw fixation cross again

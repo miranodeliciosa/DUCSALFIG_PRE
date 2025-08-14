@@ -81,8 +81,8 @@ end
 % psychtoolbox start screen in black (instead of white)
 Screen('Preference', 'VisualDebugLevel', 1);
 % Screen('Preference', 'VisualDebugLevel', 3);
-Screen('Preference', 'SkipSyncTests', 1);
-% Screen('Preference', 'SkipSyncTests', 1); disp('warning: SkipSyncTests enabled...')
+Screen('Preference', 'SkipSyncTests', 2);
+% Screen('Preference', 'SkipSyncTests', 1);
 % open a psychtoolbox window in background color
 window = Screen('OpenWindow', Scr.ScrNum, Scr.BckGrCol.*255);%, [0,0,800,600]); % 1 = main screen (0|2 -> main screen with menu bar|second monitor), color = 0 (white|[1 1 1 a]), rect = default (fullscreen|[0,0,width,height])
 %window = Screen('OpenWindow', Scr.ScrNum, Scr.BckGrCol.*255, [0 0 500 500]);%, [0,0,800,600]); % 1 = main screen (0|2 -> main screen with menu bar|second monitor), color = 0 (white|[1 1 1 a]), rect = default (fullscreen|[0,0,width,height])
@@ -101,8 +101,8 @@ if framerate ~= Scr.RefRate
 end
 
 % block button presses to matlab window STRG + C to exit and ListenChar(0) at end
-% ListenChar(-1) 
-ListenChar(0) 
+ListenChar(-1) 
+%ListenChar(0) 
 % set priority to high (1)
 Priority(1); 
 

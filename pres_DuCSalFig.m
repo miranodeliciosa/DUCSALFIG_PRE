@@ -9,8 +9,7 @@ function [timing,key,resp] = pres_DuCSalFig(p, ps, key, RDK, SBA, conmat, i_tr, 
 
 %% adaptations for training
 if flag_training == 1
-    blocknum_present = blocknum;
-    blocknum = 1;
+
 end
 
 %% initialize some RDK settings
@@ -19,16 +18,9 @@ RDKin.scr = ps;
 RDKin.scr.refrate = p.scr_refrate;
 RDKin.Propixx = p.scr_imgmultipl;
 RDKin.RDK = RDK;
-RDKin.crs = p.crs;
+RDKin.crs = p.crs; % cutout
 
 %% loop for each trial
-% send start trigger
-if flag_training~=1
-%     PRPX_sendRecTrigger('start') % TODO: how can i send trigger in 119?
-elseif flag_training == 1 && p.stim.train_trials ~= 0
-    trialindex = [1:p.stim.train_trials]'; %quick fix to make training shorter; 
-end
-
 % Wait for release of all keys on keyboard, then sync us to retrace:
 KbWait(ps.RespDev,1); % wait for releasing keys on indicated response device
 
@@ -36,11 +28,19 @@ KbWait(ps.RespDev,1); % wait for releasing keys on indicated response device
 KbQueueCreate(ps.RespDev)
 
 % Build the German feedback text
-text2present = [ ...
-    sprintf('Trial %1.0f von %d', i_tr, conmat.totaltrials ) ...
-    '\n\nR E A D Y ?' ...
-    '\n\nDrücken Sie die Leertaste, um fortzufahren.'
-];
+if flag_training == 0
+    text2present = [ ...
+        sprintf('Trial %1.0f von %d', i_tr, conmat.totaltrials ) ...
+        '\n\nR E A D Y ?' ...
+        '\n\nDrücken Sie die Leertaste, um fortzufahren.'
+    ];
+elseif flag_training == 1
+    text2present = [ ...
+        sprintf('Training Trial %1.0f', i_tr) ...
+        '\n\nR E A D Y ?' ...
+        '\n\nDrücken Sie die Leertaste, um fortzufahren.'
+    ];
+end 
 
 % Draw
 Screen('TextSize', ps.window, 24);
@@ -91,10 +91,10 @@ ttt=WaitSecs(1);
 
     SBAin.trial.event = struct( ...
         'duration', SBA.event.duration, ...
-        'onset',conmat.trials(i_tr).SBA_event_frames,...%!!!
+        'onset',conmat.trials(i_tr).SBA_event_frames,...
         'contrast',conmat.trials(i_tr).SBA_contrast, ...
         'direction', conmat.trials(i_tr).SBA_contrast_direction,...
-        'shape',conmat.trials(i_tr).SBA_eventshapes); % EXCLUDE NANs
+        'shape',conmat.trials(i_tr).SBA_eventshapes); 
 
     [barTex, dstRects, angles] = generateBarTextures(ps, SBA, SBAin);
 
@@ -183,7 +183,7 @@ ttt=WaitSecs(1);
 %             lptwrite(1,find(key.firstPress(key.keymap),1,'first'),500);
 %         end
         % log flips
-        fprintf(repmat('.', 1, event_indicator(i_fl)))
+        fprintf(repmat('.', 1, event_indicator(i_fl))); 
         timing(i_tr).FlipLog = i_fl;
     end 
      %% ITI
@@ -246,7 +246,10 @@ ttt=WaitSecs(1);
     resp(1).button_pressed_event = [];
 
     % all relevant presses 
-    t.presses = resp(1).button_presses_t(:,key.keymap_ind==key.TARGET | key.keymap_ind==key.DISTRACTOR);
+         % 1st col of t.presses is distractor
+         % 2nd col of t.presses is target
+    t.presses = resp(1).button_presses_t(:,key.keymap_ind==key.TARGET | key.keymap_ind==key.DISTRACTOR); % mind order of key.keymap_ind!
+       
     % first define response windows
     t.respwin = (resp(1).SBA_event_times'+(p.targ_respwin/1000))*1000; % reponse times in ms!
     t.postcue_presses = 0; %index presses
@@ -323,11 +326,11 @@ ttt=WaitSecs(1);
         
             switch temp.e_type(ev)
                 case 1   % target event
-                    switch temp.bcode
-                        case 1
+                    switch temp.bcode 
+                        case 2 % mind ordering of keymap_ind!
                             temp.rtype  = 'hit';
                             temp.rclass = 'correct';
-                        case 2
+                        case 1
                             temp.rtype  = 'miss';
                             temp.rclass = 'incorrect';
                         otherwise
@@ -335,10 +338,10 @@ ttt=WaitSecs(1);
                     end
                 case 2   % distractor event
                     switch temp.bcode
-                        case 2
+                        case 1
                             temp.rtype  = 'CR';
                             temp.rclass = 'correct';
-                        case 1
+                        case 2
                             temp.rtype  = 'FA';
                             temp.rclass = 'incorrect';
                         otherwise

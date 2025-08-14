@@ -47,7 +47,6 @@ for k = 1:numel(imageFiles)
        mask =  imgResized(:, :, 1) <= 180 & ...
                 imgResized(:, :, 2) <= 180 & ...
                 imgResized(:, :, 3) <= 180;
-      sum(mask(:))
       %unique(img(img(:)~=0 & img(:)~=255))
 %     end 
 
