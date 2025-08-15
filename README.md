@@ -42,7 +42,7 @@ graph TD
     run[run_Tiltanic.m] -->|calls| rand[rand_Tiltanic.m]
     run -->|calls| pres[pres_Tiltanic.m]
     pres -->|uses| generateBar[generateBarTextures.m]
-    pres -->|uses| extract[extractColorIndices.m]
+    generateBar -->|uses| extract[extractColorIndices.m]
     rand -->|uses| generateOnsets[generate_event_onset_continuous.m]
 ```
 
