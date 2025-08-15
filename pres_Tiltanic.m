@@ -1,11 +1,51 @@
-function [timing,key,resp] = pres_DuCSalFig(p, ps, key, RDK, SBA, conmat, i_tr, flag_training)
-% presents experiment SSVEP_DuCSalFig
-%   p               = parameters
-%   ps              = screen parameters
-%   RDK             = RDK parameters
-%   SBA             = SBA parameters (Static Bar Array)
-%   blocknum        = number of block
-%   flag_training   = flag for trainig (1) or experiment (0)
+function [timing,key,resp] = pres_Tiltanic(p, ps, key, RDK, SBA, conmat, i_tr, flag_training)
+% pres_Tiltanic - Presents one trial of the Tiltanic figure-ground segmentation task
+%
+%   [timing, key, resp] = pres_Tiltanic(p, ps, key, RDK, SBA, conmat, i_tr, flag_training)
+%
+%   This function handles the visual presentation and response recording
+%   for a single trial (or training block) in the SSVEP-based Tiltanic experiment.
+%   During each trial, both background (SBA) and foreground (RDK) stimuli are shown:
+%       • SBA events (rotated bar arrays) define task-relevant shapes
+%       • RDK events (coherent motion) serve as task-irrelevant distractors
+%
+%   INPUTS:
+%       p           - Parameter structure (design, display, timing, etc.)
+%       ps          - Psychtoolbox screen and system configuration
+%       key         - Key mapping structure (response buttons, keyboard queue)
+%       RDK         - Foreground random dot motion configuration
+%       SBA         - Background static bar array and event configuration
+%       conmat      - Condition matrix for the current trial (from rand_Tiltanic)
+%       i_tr        - Current trial index
+%       flag_training - 1 if training trial, 0 if experimental trial
+%
+%   OUTPUTS:
+%       timing      - Struct containing timestamps and flip logs for all frames
+%       key         - Updated key structure with recorded button presses and press times
+%       resp        - Struct containing:
+%                       • Event onset times (RDK and SBA)
+%                       • Button press times and types
+%                       • Trial classification (hit, miss, CR, FA, etc.)
+%                       • Reaction times and accuracy
+%
+%   FUNCTION OVERVIEW:
+%       • Waits for subject input to start trial
+%       • Initializes trial-specific RDK and SBA parameters
+%       • Draws frame-by-frame stimuli (SBA textures + RDK dots)
+%       • Records button presses using keyboard queue
+%       • Computes reaction times and classifies responses:
+%           - hit, miss, correct rejection (CR), false alarm (FA), FA_proper
+%       • Returns data structures for saving and feedback display
+%
+%   DEPENDENCIES:
+%       • RDK_init_FShiftGlob         - Generates foreground dot positions/colors
+%       • generateBarTextures         - Creates SBA textures and angle matrices for stimulus display in each trial
+%       • run_Tiltanic                - Calls this function for each trial
+%
+%   SEE ALSO:
+%       run_Tiltanic, rand_Tiltanic, generateBarTextures
+%
+%   Author: Sebastian Wehle, Leipzig (2025)
 
 %% adaptations for training
 if flag_training == 1

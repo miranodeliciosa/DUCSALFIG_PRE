@@ -1,33 +1,54 @@
 function [barTex, dstRects, angles] = generateBarTextures(ps, SBA, SBAin)
-% generateBarTextures - Prepares bar stimulus textures, positions, and rotation angles for Psychtoolbox
+% generateBarTextures - Generates bar textures and per-frame rotation angles for SBA stimuli
 %
-% This function generates rectangular bar textures for use with Screen('DrawTextures') in Psychtoolbox.
-% The bars are evenly distributed in a grid within a fixed area centered on the screen.
-% Multiple shape events per trial are supported; each can trigger rotation of a subset of bars at specific frames.
-%
-% USAGE:
 %   [barTex, dstRects, angles] = generateBarTextures(ps, SBA, SBAin)
 %
-% INPUTS:
-%   ps               - Structure containing Psychtoolbox window handle (ps.window) and framerate (ps.framerate)
-%   SBA              - Structure containing stimulus parameters:
-%                      - numBars: [cols, rows]
-%                      - sizeBars: [length, width]
-%                      - defaultAngle: default bar orientation
-%                      - anglesToRotate: vector of rotation angles
-%                      - colors: n x 3 RGB matrix (0–1 values)
-%                      - freq: color-switching frequency
-%   SBAin            - Trial-specific structure with:
-%                      - trial.frames: total number of frames
-%                      - trial.event.shape: vector of shape indices (which bar groups to rotate)
-%                      - trial.event.onset: vector of onset frames (same length as shape)
-%                      - trial.event.duration: scalar (duration of each event in sec)
-%                      - trial.event.contrast: vector of contrast (index into anglesToRotate)
+%   This function prepares frame-by-frame visual stimuli for the Static Bar Array (SBA)
+%   used in the Tiltanic figure-ground segmentation task. It creates Psychtoolbox textures
+%   for colored bars, calculates their spatial positions, and applies shape-defined 
+%   rotation angles over time to simulate segmentation events.
 %
-% OUTPUTS:
-%   barTex           - Cell array of bar textures per frame
-%   dstRects         - Destination rectangles (4 × totalBars)
-%   angles           - Matrix (totalBars × numFrames) with rotation angle (in degrees) per bar and frame
+%   INPUTS:
+%       ps          - Structure with Psychtoolbox screen parameters:
+%                       • ps.window: window handle
+%                       • ps.framerate: screen refresh rate (Hz)
+%
+%       SBA         - SBA configuration structure with:
+%                       • size: width/height of stimulus area (in px)
+%                       • numBars: [cols, rows] grid size
+%                       • sizeBars: [length, width] of each bar (in px)
+%                       • defaultAngle: orientation baseline (in degrees)
+%                       • colors: n × 3 RGB color matrix (0–1 range)
+%                       • freq: flicker frequency (Hz)
+%                       • event.anglesToRotate: contrast angle values
+%
+%       SBAin       - Trial-specific structure with:
+%                       • trial.frames: total number of frames
+%                       • trial.event.shape: vector of shape indices per event
+%                       • trial.event.onset: vector of onset frames
+%                       • trial.event.duration: event duration in seconds
+%                       • trial.event.contrast: index into anglesToRotate
+%                       • trial.event.direction: +1/-1 for rotation direction
+%
+%   OUTPUTS:
+%       barTex      - Cell array of length trial.frames, each element a texture pointer for that frame
+%       dstRects    - 4 × nBars matrix of destination rectangles for positioning each bar
+%       angles      - nBars × trial.frames matrix of rotation angles in degrees
+%
+%   FUNCTION OVERVIEW:
+%       • Computes evenly spaced grid layout for all bars, centered on screen
+%       • Assigns flickering bar colors (avoiding repeats) at 7.5 Hz
+%       • Loads shape definitions using `extractColorIndices` and determines which bars to rotate
+%       • Jitters shape position slightly to prevent location-specific learning
+%       • Computes rotation angles frame-wise based on shape, contrast, and direction
+%
+%   DEPENDENCIES:
+%       • extractColorIndices.m: Loads and interprets shape images as SBA bar rotation masks
+%
+%   SEE ALSO:
+%       run_Tiltanic, rand_Tiltanic, pres_Tiltanic
+%
+%   Author: Sebastian Wehle, Leipzig (2025)
 
 % screen parameters
 window = ps.window;

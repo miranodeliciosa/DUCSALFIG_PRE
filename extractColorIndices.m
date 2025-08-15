@@ -1,19 +1,45 @@
 function [iRows, iCols] = extractColorIndices(imagesFolder, color, sizeToReshape)
-% extractColorIndices - Load and process images to extract pixel indices of a specific RGB color
+% extractColorIndices - Extracts pixel locations of shape masks from image files
 %
-% INPUTS:
-%   imagesFolder   - Name of the folder containing PNG images (relative to current folder)
-%   color          - 1x3 RGB vector specifying the target color (e.g., [255 0 0])
-%   sizeToReshape  - 1x2 vector [height, width] for resizing each image
+%   [iRows, iCols] = extractColorIndices(imagesFolder, color, sizeToReshape)
 %
-% OUTPUTS:
-%   iRows          - Cell array; each cell contains row indices of matching pixels in one image
-%   iCols          - Cell array; each cell contains column indices of matching pixels in one image
+%   This function reads shape mask images from a given folder and identifies
+%   the pixel locations that match a specified RGB color or fall below a luminance
+%   threshold. The resulting pixel positions define bar locations for shape events
+%   in the Tiltanic experiment.
 %
-% NOTES:
-%   - Alpha channels are ignored
-%   - RGB values must match exactly
-%   - Images are assumed to be RGB and resized using imresize
+%   INPUTS:
+%       imagesFolder   - Path to folder containing shape images (*.tiff format)
+%                        Images should be in RGB format. Alpha channels are ignored.
+%       color          - RGB color vector [R G B] (0–255) indicating which color to detect
+%                        Currently not strictly applied — instead, a low luminance threshold
+%                        is used to detect figure regions.
+%       sizeToReshape  - Desired [height, width] in pixels for resizing each image,
+%                        typically matching the number of SBA bars (e.g., [12, 12])
+%
+%   OUTPUTS:
+%       iRows          - Cell array (1 × nShapes); row indices of figure pixels per image
+%       iCols          - Cell array (1 × nShapes); column indices of figure pixels per image
+%
+%   FUNCTION BEHAVIOR:
+%       • Each shape image is resized to the SBA grid size
+%       • Black/dark regions (RGB ≤ 180) are interpreted as figure shapes
+%       • The positions of dark pixels are extracted to determine which SBA bars
+%         will rotate during shape events in `generateBarTextures`
+%
+%   ASSUMPTIONS & NOTES:
+%       • Intended for use with grayscale or binary mask-like TIFF images
+%       • RGB matching is currently implemented via a luminance threshold, not exact match
+%       • Output format aligns with SBA grid indexing (rows/columns for bar placement)
+%
+%   DEPENDENCIES:
+%       Used by: generateBarTextures.m
+%
+%   SEE ALSO:
+%       generateBarTextures, run_Tiltanic
+%
+%   Author: Sebastian Wehle, Leipzig (2025)
+
 
 % Get all PNG files in the folder
 %imageFiles = dir(fullfile(imagesFolder, '*.png'));

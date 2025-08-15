@@ -101,7 +101,7 @@ if framerate ~= Scr.RefRate
 end
 
 % block button presses to matlab window STRG + C to exit and ListenChar(0) at end
-ListenChar(-1) 
+%ListenChar(-1) 
 %ListenChar(0) 
 % set priority to high (1)
 Priority(1); 
