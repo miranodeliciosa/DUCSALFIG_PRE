@@ -1,114 +1,91 @@
-# Tiltanic Experiment
 
-**Tiltanic** is a MATLAB-based Psychtoolbox experiment designed to study shape perception and attentional filtering using flickering bar arrays. Participants detect target shapes formed by oriented bars embedded in a dynamic background.
+# Tiltanic Experiment – Perceptual Threshold Measurement in Competitive Stimulus Configuration
 
----
-
-## Overview
-
-**Goal:**  
-Participants identify specific shapes (e.g., triangle, square, bar) formed by rotating subsets of bars within a grid.
-
-**Core Features:**
-- Bar grid stimulus with flickering colors (Static Bar Array, SBA)
-- Foreground motion distraction (Random Dot Kinematogram, RDK)
-- Target shape detection via orientation and contrast changes
-- Supports randomized trials and training mode
+**Tiltanic** is a MATLAB-based Psychtoolbox experiment designed to study perceptual contrast thresholds in a competitive stimulus configuration. This is a pre-experiment for Tiltopia. Participants detect target shapes formed by oriented bars embedded in a dynamic background.
 
 ---
 
-## Repository Structure
+## Folder Structure
 
 ```
 Tiltanic/
-│
-├── run_Tiltanic.m                 # Main entry point
-├── rand_Tiltanic.m               # Trial and event randomization
-├── pres_Tiltanic.m               # Trial presentation & response collection
-├── generateBarTextures.m         # Stimulus texture creation (SBA)
-├── extractColorIndices.m         # Extracts bar locations from shape images
-├── generate_event_onset_continuous.m # Background/foreground event jittering
-├── /images/                      # Shape mask images (.tiff)
-└── README.md                     # This file
+├── run_Tiltanic.m           # Main experiment entry script
+├── pres_Tiltanic.m          # Trial presentation loop
+├── rand_Tiltanic.m          # Trial randomization and event generation
+├── generateBarTextures.m    # Creates textures and rotations for bar stimuli
+├── generate_event_onset_continuous.m  # Jittered timing for background & foreground events
+├── extractColorIndices.m    # Extracts shape pixel indices from TIFF images
+├── logfiles/                # Output folder for participant data (*.mat)
+└── images/                  # Folder with .tiff shape templates for bar locations
 ```
 
 ---
 
-## Getting Started
+## Experiment Structure
 
-### Prerequisites
+The experiment includes **Static Bar Arrays (SBA)** with shapes formed by orientation contrasts and **Random Dot Kinematograms (RDKs)** as visual distractors. Each trial presents one shape at a time. Participants judge whether it matches a defined **target shape**.
 
-- MATLAB R2020b or later
-- [Psychtoolbox 3](http://psychtoolbox.org/)
-- Working directory with all `.m` files and `/images/` folder
+### Experiment Flow
 
-### Run the Experiment
+1. **Shape Learning Phase**
+2. **Training Trials (simplified difficulty)**
+3. **Main Experiment Trials (16 × ~1.5 min each)**
 
-```matlab
-run_Tiltanic
+---
+
+## Script Dependencies
+
+How the main components connect:
+
+```mermaid
+graph TD
+    run[run_Tiltanic.m] -->|calls| rand[rand_Tiltanic.m]
+    run -->|calls| pres[pres_Tiltanic.m]
+    pres -->|uses| generateBar[generateBarTextures.m]
+    pres -->|uses| extract[extractColorIndices.m]
+    rand -->|uses| generateOnsets[generate_event_onset_continuous.m]
 ```
 
-You’ll be prompted to enter experiment parameters such as participant ID, run mode (training/experiment), etc.
+Each function is modular and documented with detailed headers.
 
 ---
 
-## Shape Image Setup
+## Output Data Structure
 
-All target shapes are defined as `.tiff` files in `/images/`.
-
-**Requirements:**
-- Format: TIFF
-- Dimensions match SBA grid size (e.g., 12×12)
-- Dark pixels (RGB ≤ 180) define the shape
-- Each image represents one shape class
-
----
-
-## Function Summary
-
-| Function                      | Description |
-|------------------------------|-------------|
-| `run_Tiltanic`               | Initializes experiment, handles blocks & saving |
-| `rand_Tiltanic`              | Randomizes trial conditions & event timing |
-| `pres_Tiltanic`              | Presents stimuli and collects participant responses |
-| `generateBarTextures`        | Generates SBA textures, positions, and orientation sequences |
-| `extractColorIndices`        | Reads TIFF mask images to identify shape bar indices |
-| `generate_event_onset_continuous` | Jitters event onset timings with SOA constraints |
-
----
-
-## Architecture Diagram
+After completing the experiment, all relevant output data are saved in a `.mat` file named using the following pattern:
 
 ```
-run_Tiltanic
-   ├── rand_Tiltanic
-   │     └── generate_event_onset_continuous
-   └── pres_Tiltanic
-         └── generateBarTextures
-               └── extractColorIndices
+logfiles/VPXX_timing.mat
 ```
 
----
+Where `XX` is the subject number (e.g., `VP01_timing.mat`). This file includes all essential variables needed for analysis and reproducibility of the experiment.
 
-## Training Mode
+### Stored Variables
 
-To run the experiment in training mode, set the `flag_training` input to `1` when calling `rand_Tiltanic` or `pres_Tiltanic`. This activates different contrast levels, event counts, and trial durations.
-
----
-
-## Output & Response Data
-
-Participant responses and trial timings are stored in the `resp` and `timing` structures:
-- Button press timestamps
-- Correct/incorrect classification
-- Reaction times
-- Event metadata (contrast, shape, type)
+| Variable        | Type        | Description |
+|----------------|-------------|-------------|
+| `p`            | `struct`    | Global experiment parameters (timing windows, display settings, response windows, etc.) | 
+| `RDK`          | `struct`    | Parameters for the Random Dot Kinematogram (e.g., dot color, speed, direction, frequency) |
+| `SBA`          | `struct`    | Static Bar Array configuration including shape events, colors, orientations, and stimulus layout |
+| `timing`       | `struct[]`  | Flip-wise stimulus presentation timing, collected via Psychtoolbox timing functions |
+| `button_presses` | `struct`  | Keypress timestamps and mappings to response buttons |
+| `resp`         | `struct[]`  | Trial-wise behavioral responses: RTs, response classification (hit/miss/FA), and stimulus metadata |
+| `randmat`      | `struct`    | Randomization matrix specifying the order and parameters of stimuli and trials (from `rand_Tiltanic`) |
 
 ---
 
-## License
+## 👩‍🔬 Requirements
 
-MIT License (see `LICENSE` file if provided)
+- MATLAB R2020+
+- Psychtoolbox 3.x
+- Standard keyboard and display
+- `.tiff` shape templates in `images/` folder
+
+---
+
+## 📣 Citation
+
+If you use this experiment or parts of it in your work, please cite the associated publication (forthcoming) or credit the developers.
 
 ---
 
